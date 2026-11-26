@@ -1,0 +1,43 @@
+name: Windows build and offline tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Audit public source
+        shell: pwsh
+        run: ./scripts/Audit-Public.ps1
+      - name: Build launcher
+        shell: pwsh
+        run: ./scripts/Build.ps1
+      - name: Offline regression tests
+        shell: pwsh
+        run: ./scripts/Test.ps1
+      - name: Upload community build
+        uses: actions/upload-artifact@v4
+        with:
+          name: antigravity-launcher-windows-x64-beta
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload fixed-field test assertions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-test-results
+          path: artifacts/tests/
+          if-no-files-found: ignore
+          retention-days: 14
